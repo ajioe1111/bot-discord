@@ -4,7 +4,6 @@ const fs = require('fs');
 let config = require('./config.json');
 let prefix = config.prefix;
 
-let waifuArr = ["Megumin", "Rem"];
 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
@@ -12,33 +11,37 @@ client.on('ready', () => {
 
 
 client.on(`message`, msg => {
-  if (msg.content.startsWith(prefix + `add`)) {
+  if (msg.content == prefix + `add`) {
+    msg.reply(`Ошибка ввода! Пример команды: !add Name;OriginalName;Age;DateOfBirth;Description`);
+  }
+  else if (msg.content.startsWith(prefix + `add`)) {
     let args = msg.content.split(' ');
     args.shift();
     args = args[0].split(';');
-    if (args[0] == undefined || args[1] == undefined || args[2] == undefined || args[3] == undefined || args[4] == undefined) {
-      (msg.reply(`Ошибка ввода! Пример команды: !add Name;OriginalName;Age;DateOfBirth;Description`));
+    if (args.length != 5) {
+      msg.reply(`Ошибка ввода! Пример команды: !add Name;OriginalName;Age;DateOfBirth;Description`);
     }
     else {
+      let waifuArr = checkWaifu();
       let name = args[0];
-      waifuArr.push(name);
       let original = args[1];
       let waifuAge = args[2];
       let date = args[3];
       let desc = args[4];
-      let waifuId = waifuArr.length - 1;
+      let waifuId = waifuArr.length;
       let waifu = { fullName: name, id: waifuId, originalName: original, age: waifuAge, dateOfBirth: date, description: desc };
-      fs.writeFileSync(`./waifu/${waifuId}.json`, JSON.stringify(waifu));
-      msg.reply(`waifu добавлена!`);
+      waifuArr.push(name);
+      saveWaifu(waifuId, waifu, waifuArr);
+      msg.reply(`Waifu создана!`);
     }
   }
-})
-
+});
 
 
 client.on(`message`, msg => {
   if (msg.content === prefix + `list`) {
     msg.channel.send('Список Waifu')
+    let waifuArr = checkWaifu();
     for (let i = 0; i < waifuArr.length; i++) {
       let waifu = waifuArr[i];
       msg.channel.send(waifu + ` { ID ${i}}`);
@@ -67,8 +70,17 @@ client.on('message', msg => {
   }
 });
 
+function checkWaifu() {
+  let waifujson = fs.readFileSync("waifulist.json", 'utf-8');
+  let waifuArr = JSON.parse(waifujson);
+  return waifuArr;
+}
 
-
+function saveWaifu (id, waifu, arr) {
+  fs.writeFileSync(`./waifu/${id}.json`, JSON.stringify(waifu));
+  var json = JSON.stringify(arr);
+  fs.writeFileSync("waifulist.json", json);
+}
 
 
 client.login(config.token);
